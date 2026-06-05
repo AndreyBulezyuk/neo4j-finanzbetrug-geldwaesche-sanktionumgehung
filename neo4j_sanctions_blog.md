@@ -596,6 +596,12 @@ Dieses Beispiel kratzt nur an der Oberfläche. Was in professionellen Financial-
 
 Der fundamentale Shift ist konzeptueller Natur: Compliance hört auf, ein regelbasierter Prozess zu sein, und wird zu einer Pfadsuche in einem globalen Netzwerk von Entitäten, Beziehungen und Ereignissen. Graph-Datenbanken sind dafür nicht nur ein praktisches Werkzeug — sie sind das natürliche Paradigma.
 
+--- 
+
+## Der gesamte Code zum herunterladen und nachcoden
+
+Github Repository: https://github.com/AndreyBulezyuk/neo4j-finanzbetrug-geldwaesche-sanktionumgehung
+
 ---
 
 ## Ressourcen und weiterführende Links
