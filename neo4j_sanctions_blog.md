@@ -246,7 +246,17 @@ with driver.session() as session:
 print("\n✅ Daten erfolgreich in Neo4j importiert.")
 ```
 
-Der `MERGE`-Befehl ist in Cypher das Äquivalent zu `INSERT OR IGNORE` — idempotent und damit sicher für wiederholten Aufruf. Das Graph-Schema ergibt sich organisch aus den Daten; kein Schema-Migration-Skript wie in SQL nötig. Die `location_x`/`location_y`-Koordinaten (Längen- und Breitengrad) werden später für die Kartenvisualisierung benötigt.
+Der `MERGE`-Befehl ist in Cypher das Äquivalent zu `INSERT OR IGNORE` — sicher für wiederholten Aufruf. Das Graph-Schema ergibt sich organisch aus den Daten; kein Schema-Migration-Skript wie in SQL nötig. Die `location_x`/`location_y`-Koordinaten (Längen- und Breitengrad) werden später für die Kartenvisualisierung benötigt.
+
+---
+
+### Zwischenschritt: Simple Visualisierung mit yFiles (Neo4jGraphWidget) 
+
+```python
+visualize_cypher.show_cypher("MATCH p=()-[]-() RETURN p LIMIT 50", layout="orthogonal")
+```
+
+![Simple Visualisierung mit yFiles](Graph-Visualization-in-Jupyter-yFiles.png)
 
 ---
 
@@ -447,37 +457,16 @@ def coordinate_mapping(node):
         return None
     return (lat, lon)
 
-def node_color(node):
-    if node["properties"].get("sanctioned"):
-        return "#e53935"   # rot  — sanktionierte Entität
-    return "#4fc3f7"       # blau — Zwischenstelle / Lieferant
-
-def node_size(node):
-    return 60.0 if node["properties"].get("sanctioned") else 40.0
-
-# ── Kanten-Mappings ───────────────────────────────────────────────────────────
-def rel_color(rel):
-    if rel.get("properties", {}).get("involves_sanctioned"):
-        return "#e53935"   # rot  — führt zu/von sanktioniertem Knoten
-    return "#90caf9"       # blau — unverdächtiger Hop
-
-def rel_thickness(rel):
-    return 4.0 if rel.get("properties", {}).get("involves_sanctioned") else 1.5
 
 # ── Widget konfigurieren ──────────────────────────────────────────────────────
 visualize_cypher.del_node_configuration('*')
 visualize_cypher.del_relationship_configuration('*')
 
-visualize_cypher.node_color_mapping           = node_color
-visualize_cypher.node_size_mapping            = node_size
-visualize_cypher.relationship_color_mapping            = rel_color
-visualize_cypher.relationship_thickness_factor_mapping = rel_thickness
-
 visualize_cypher.add_node_configuration("*", coordinate=coordinate_mapping)
 visualize_cypher.show_cypher(QUERY_4_MAP, layout="map")
 ```
 
-Die Karte zeigt sofort, woher die Güter kommen (Westeuropa, blau) und wo sie landen (Russland, rot). Die direkt an sanktionierte Ziele führenden Kanten werden rot hervorgehoben, während neutrale Hops hellblau bleiben. Dieser geographische Blick ist besonders wirkungsvoll für Präsentationen gegenüber Compliance-Teams oder Behörden.
+![Map Graph](Map-Graph.png)
 
 ---
 
