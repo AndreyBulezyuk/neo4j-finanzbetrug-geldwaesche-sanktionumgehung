@@ -1,5 +1,3 @@
-
-
 # Sanktionsverstöße, Geldwäsche und Finanzbetrug aufspüren mit Neo4j
 
 *Wie Graph-Datenbanken dort brillieren, wo SQL und NoSQL aufhören zu funktionieren — mit einem vollständigen Python-Beispiel.*
@@ -71,10 +69,6 @@ Das Schöne an Graph-Traversierung: Für jeden dieser Schritte schreiben wir in 
 
 ## Hands-on: Neo4j mit Python und JupyterLab
 
-Code zum Ausprobieren:. 
-
-Code zum Mitlesen:
-
 ### Voraussetzungen
 
 ```bash
@@ -90,7 +84,7 @@ mkdir neo4j-sanctions && cd neo4j-sanctions
 uv init 
 uv venv
 source ./venv/bin/activate
-uv add neo4j pandas matplotlib networkx
+uv add neo4j pandas matplotlib networkx yfiles_jupyter_graphs_for_neo4j
 ```
 
 ---
@@ -105,13 +99,15 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.patheffects as pe
+from yfiles_jupyter_graphs_for_neo4j import Neo4jGraphWidget
 
 # ─── Verbindungsparameter ─────────────────────────────────────────────────────
-NEO4J_URI      = "bolt://localhost:7687"
+NEO4J_URI      = "neo4j://localhost:7687"
 NEO4J_USER     = "neo4j"
 NEO4J_PASSWORD = "password"   # ← euer lokales Passwort hier eintragen
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+visualize_cypher = Neo4jGraphWidget(driver)
 
 # Verbindungstest
 with driver.session() as session:
@@ -119,7 +115,7 @@ with driver.session() as session:
     print(result.single()["status"])
 ```
 
-Der offizielle [Neo4j Python Driver](https://neo4j.com/docs/api/python-driver/current/) kommuniziert über das Bolt-Protokoll mit der Datenbank. `GraphDatabase.driver()` erzeugt einen thread-sicheren Connection-Pool — geeignet für Produktivbetrieb und Batch-Analysen gleichermaßen.
+Der offizielle [Neo4j Python Driver](https://neo4j.com/docs/api/python-driver/current/) kommuniziert über das Bolt-Protokoll mit der Datenbank. `GraphDatabase.driver()` erzeugt einen thread-sicheren Connection-Pool — geeignet für Produktivbetrieb und Batch-Analysen gleichermaßen. `Neo4jGraphWidget` ist das interaktive Visualisierungs-Widget, das wir später für die Kartenansicht nutzen.
 
 ---
 
@@ -152,22 +148,22 @@ print("Constraints & Indizes angelegt.")
 
 ALL_NODES = [
     # Sanktionierte Entitäten (Russland)
-    {"id": "SE001", "name": "Vostok Tech LLC",      "country": "Russia", "type": "Company", "sanctioned": True},
-    {"id": "SE002", "name": "Alexei Petrov",          "country": "Russia", "type": "Person",  "sanctioned": True},
-    {"id": "SE003", "name": "Meridian Arms Group",    "country": "Russia", "type": "Company", "sanctioned": True},
+    {"id": "SE001", "name": "Vostok Tech LLC",      "country": "Russia", "type": "Company", "sanctioned": True,  "location_x": 37.6176, "location_y": 55.7558},
+    {"id": "SE002", "name": "Alexei Petrov",          "country": "Russia", "type": "Person",  "sanctioned": True,  "location_x": 37.6176, "location_y": 55.7558},
+    {"id": "SE003", "name": "Meridian Arms Group",    "country": "Russia", "type": "Company", "sanctioned": True,  "location_x": 37.6176, "location_y": 55.7558},
     # Shell-/Briefkastenfirmen (EU)
-    {"id": "SH001", "name": "Nordic Bridge Trading Ltd", "country": "Estonia",  "type": "Company", "sanctioned": False},
-    {"id": "SH002", "name": "Alpha Circuit GmbH",         "country": "Germany",  "type": "Company", "sanctioned": False},
-    {"id": "SH003", "name": "Baltica Trade OÜ",           "country": "Estonia",  "type": "Company", "sanctioned": False},
-    {"id": "SH004", "name": "Nexus Components SARL",      "country": "France",   "type": "Company", "sanctioned": False},
-    {"id": "SH005", "name": "Kyra Investments Ltd",       "country": "Cyprus",   "type": "Company", "sanctioned": False},
+    {"id": "SH001", "name": "Nordic Bridge Trading Ltd", "country": "Estonia",  "type": "Company", "sanctioned": False, "location_x": 25.7482, "location_y": 58.5953},
+    {"id": "SH002", "name": "Alpha Circuit GmbH",         "country": "Germany",  "type": "Company", "sanctioned": False, "location_x": 10.4515, "location_y": 51.1657},
+    {"id": "SH003", "name": "Baltica Trade OÜ",           "country": "Estonia",  "type": "Company", "sanctioned": False, "location_x": 25.7482, "location_y": 58.5953},
+    {"id": "SH004", "name": "Nexus Components SARL",      "country": "France",   "type": "Company", "sanctioned": False, "location_x":  2.2137, "location_y": 46.2276},
+    {"id": "SH005", "name": "Kyra Investments Ltd",       "country": "Cyprus",   "type": "Company", "sanctioned": False, "location_x": 33.4299, "location_y": 35.1264},
     # Wirtschaftlich Berechtigte (verdeckt)
-    {"id": "BO001", "name": "Dmitri Volkov",   "country": "Russia", "type": "Person", "sanctioned": False},
-    {"id": "BO002", "name": "Irina Sorokina",  "country": "Russia", "type": "Person", "sanctioned": False},
+    {"id": "BO001", "name": "Dmitri Volkov",   "country": "Russia", "type": "Person", "sanctioned": False, "location_x": 37.6176, "location_y": 55.7558},
+    {"id": "BO002", "name": "Irina Sorokina",  "country": "Russia", "type": "Person", "sanctioned": False, "location_x": 37.6176, "location_y": 55.7558},
     # Legitime EU-Lieferanten (unwissentlich beteiligt)
-    {"id": "SUP001", "name": "MicroSemi Europe AG",  "country": "Germany",     "type": "Company", "sanctioned": False},
-    {"id": "SUP002", "name": "DronePartsHub GmbH",   "country": "Austria",     "type": "Company", "sanctioned": False},
-    {"id": "SUP003", "name": "AdvancedChips B.V.",   "country": "Netherlands", "type": "Company", "sanctioned": False},
+    {"id": "SUP001", "name": "MicroSemi Europe AG",  "country": "Germany",     "type": "Company", "sanctioned": False, "location_x": 10.4515, "location_y": 51.1657},
+    {"id": "SUP002", "name": "DronePartsHub GmbH",   "country": "Austria",     "type": "Company", "sanctioned": False, "location_x": 14.5501, "location_y": 47.5162},
+    {"id": "SUP003", "name": "AdvancedChips B.V.",   "country": "Netherlands", "type": "Company", "sanctioned": False, "location_x":  5.2913, "location_y": 52.1326},
 ]
 
 TRANSACTIONS = [
@@ -204,7 +200,9 @@ with driver.session() as session:
             MERGE (e:Entity:{label} {{id: $id}})
             SET e.name       = $name,
                 e.country    = $country,
-                e.sanctioned = $sanctioned
+                e.sanctioned = $sanctioned,
+                e.location_x = $location_x,
+                e.location_y = $location_y
         """
         session.run(cypher, **node)
 
@@ -248,7 +246,7 @@ with driver.session() as session:
 print("\n✅ Daten erfolgreich in Neo4j importiert.")
 ```
 
-Der `MERGE`-Befehl ist in Cypher das Äquivalent zu `INSERT OR IGNORE` — idempotent und damit sicher für wiederholten Aufruf. Das Graph-Schema ergibt sich organisch aus den Daten; kein Schema-Migration-Skript wie in SQL nötig.
+Der `MERGE`-Befehl ist in Cypher das Äquivalent zu `INSERT OR IGNORE` — idempotent und damit sicher für wiederholten Aufruf. Das Graph-Schema ergibt sich organisch aus den Daten; kein Schema-Migration-Skript wie in SQL nötig. Die `location_x`/`location_y`-Koordinaten (Längen- und Breitengrad) werden später für die Kartenvisualisierung benötigt.
 
 ---
 
@@ -277,7 +275,15 @@ print("Direkte Transfers zu sanktionierten Entitäten:")
 display(df_q1)
 ```
 
-**Ergebnis:** Nordic Bridge Trading Ltd (Estland) → Vostok Tech LLC (Russland) mit 480.000 €, Baltica Trade OÜ → Meridian Arms Group, und Kyra Investments Ltd → Alexei Petrov mit 1,2 Mio. €. Die direkten Treffer — aber noch ohne das dahinterliegende Netzwerk.
+**Ergebnis:**
+
+| Absender | Absender_Land | Betrag_EUR | Güter | Datum | Empfänger |
+|---|---|---|---|---|---|
+| Kyra Investments Ltd | Cyprus | 1.200.000 € | Überweisung (Tarnung Gewinne) | 2024-05-01 | Alexei Petrov |
+| Nordic Bridge Trading Ltd | Estonia | 480.000 € | FPGA-Chips (Dual-Use) | 2024-03-15 | Vostok Tech LLC |
+| Baltica Trade OÜ | Estonia | 270.000 € | Drohnen-Komponenten | 2024-04-02 | Meridian Arms Group |
+
+Drei direkte Treffer — aber die Absender selbst erscheinen unverdächtig. Ohne Eigentümerschaftsdaten ist nicht erkennbar, dass hinter Kyra Investments und Nordic Bridge dieselben russischen Akteure stecken.
 
 ---
 
@@ -290,7 +296,6 @@ MATCH (owner:Entity {country: 'Russia'})-[o:OWNS]->(shell:Entity)
 WHERE shell.country <> 'Russia'
 RETURN
     owner.name    AS Eigentümer,
-    owner.type    AS Eigentümer_Typ,
     CASE owner.sanctioned WHEN true THEN '⚠ SANKTIONIERT' ELSE 'nicht sanktioniert' END AS Status,
     o.share_pct   AS Anteil_Pct,
     shell.name    AS Shell_Firma,
@@ -306,7 +311,18 @@ print("Shell-Firmen unter russischer Kontrolle:")
 display(df_q2)
 ```
 
-**Ergebnis:** Sechs EU-registrierte Firmen unter russischer Kontrolle — darunter die entscheidende Verbindung: **Alexei Petrov (sanktioniert)** hält 100 % an Kyra Investments Ltd (Zypern) und 51 % an Nexus Components SARL (Frankreich). Das ist die `OWNS`-Kante, die jeden Compliance-Alarm auslösen müsste.
+**Ergebnis:**
+
+| Eigentümer | Status | Anteil_Pct | Shell_Firma | Shell_Land |
+|---|---|---|---|---|
+| Alexei Petrov | ⚠ SANKTIONIERT | 100 | Kyra Investments Ltd | Cyprus |
+| Alexei Petrov | ⚠ SANKTIONIERT | 51 | Nexus Components SARL | France |
+| Dmitri Volkov | nicht sanktioniert | 100 | Nordic Bridge Trading Ltd | Estonia |
+| Irina Sorokina | nicht sanktioniert | 100 | Baltica Trade OÜ | Estonia |
+| Dmitri Volkov | nicht sanktioniert | 60 | Alpha Circuit GmbH | Germany |
+| Irina Sorokina | nicht sanktioniert | 40 | Alpha Circuit GmbH | Germany |
+
+Sechs EU-registrierte Firmen unter russischer Kontrolle — darunter die entscheidende Verbindung: **Alexei Petrov (sanktioniert)** hält 100 % an Kyra Investments Ltd (Zypern) und 51 % an Nexus Components SARL (Frankreich). Das ist die `OWNS`-Kante, die jeden Compliance-Alarm auslösen müsste.
 
 ---
 
@@ -315,7 +331,7 @@ display(df_q2)
 ```python
 # ─── Query 3: Sanktionierte Person → eigene Shell → ausgehende Transaktionen ──
 QUERY_3 = """
-MATCH (sp:Entity {sanctioned: true, type: 'Person'})
+MATCH (sp:Person {sanctioned: true})
       -[:OWNS]->(shell:Entity)
       -[tx:TRANSFERRED_TO]->(target:Entity)
 RETURN
@@ -333,12 +349,22 @@ with driver.session() as session:
     rows = session.run(QUERY_3).data()
 
 df_q3 = pd.DataFrame(rows)
-df_q3["Betrag_EUR"] = df_q3["Betrag_EUR"].apply(lambda x: f"{x:,.0f} €")
-print("Geldflüsse über von sanktionierten Personen kontrollierte Shells:")
+if len(rows) > 0:
+    df_q3["Betrag_EUR"] = df_q3["Betrag_EUR"].apply(lambda x: f"{x:,.0f} €")
+    print("Geldflüsse über von sanktionierten Personen kontrollierte Shells:")
+else:
+    print("Keine Geldflüsse gefunden")
 display(df_q3)
 ```
 
-Diese Query verbindet zwei Kantentypen in einem Atemzug: `OWNS` und `TRANSFERRED_TO`. In SQL wären das drei Tabellen-JOINs. In Cypher ist es ein natürliches Muster, das der tatsächlichen Struktur der Realität entspricht.
+**Ergebnis:**
+
+| Sanktionierte_Person | Shell_Firma | Shell_Land | Betrag_EUR | Güter | Empfänger | Empfänger_Status |
+|---|---|---|---|---|---|---|
+| Alexei Petrov | Kyra Investments Ltd | Cyprus | 1.200.000 € | Überweisung (Tarnung Gewinne) | Alexei Petrov | ⚠ SANKTIONIERT |
+| Alexei Petrov | Nexus Components SARL | France | 285.000 € | Drohnen-Komponenten | Baltica Trade OÜ | unverdächtig |
+
+Diese Query verbindet zwei Kantentypen in einem Atemzug: `OWNS` und `TRANSFERRED_TO`. In SQL wären das drei Tabellen-JOINs. In Cypher ist es ein natürliches Muster, das der tatsächlichen Struktur der Realität entspricht. Der erste Treffer ist besonders brisant: Alexei Petrov überweist sich über seine eigene Offshore-Shell letztlich selbst Geld — ein klassisches Geldwäsche-Schema.
 
 ---
 
@@ -372,13 +398,90 @@ display(df_q4[["Pfad", "Hops", "Gesamtbetrag"]])
 print(f"\n🔴 {len(df_q4)} Sanktionsumgehungs-Pfade entdeckt!")
 ```
 
-**Das Endergebnis:** Drei vollständige Lieferkettenpfade werden aufgedeckt. Der gravierendste: `MicroSemi Europe AG [Germany] → Alpha Circuit GmbH [Germany] → Kyra Investments Ltd [Cyprus] → Alexei Petrov [Russia]` mit einem Gesamtvolumen von 2.790.000 €. Genau dieser Pfad wäre in einer normalen Transaktionsdatenbank unsichtbar — drei separate Lieferketten ohne offensichtliche Verbindung auf Tabellenebene.
+**Ergebnis:**
+
+| Pfad | Hops | Gesamtbetrag |
+|---|---|---|
+| MicroSemi Europe AG [Germany] → Alpha Circuit GmbH [Germany] → Kyra Investments Ltd [Cyprus] → Alexei Petrov [Russia] | 3 | 2.790.000 € |
+| Alpha Circuit GmbH [Germany] → Kyra Investments Ltd [Cyprus] → Alexei Petrov [Russia] | 2 | 2.300.000 € |
+| MicroSemi Europe AG [Germany] → Alpha Circuit GmbH [Germany] → Nordic Bridge Trading Ltd [Estonia] → Vostok Tech LLC [Russia] | 3 | 1.480.000 € |
+| Kyra Investments Ltd [Cyprus] → Alexei Petrov [Russia] | 1 | 1.200.000 € |
+| Alpha Circuit GmbH [Germany] → Nordic Bridge Trading Ltd [Estonia] → Vostok Tech LLC [Russia] | 2 | 990.000 € |
+| DronePartsHub GmbH [Austria] → Nexus Components SARL [France] → Baltica Trade OÜ [Estonia] → Meridian Arms Group [Russia] | 3 | 815.000 € |
+| Nexus Components SARL [France] → Baltica Trade OÜ [Estonia] → Meridian Arms Group [Russia] | 2 | 555.000 € |
+| Nordic Bridge Trading Ltd [Estonia] → Vostok Tech LLC [Russia] | 1 | 480.000 € |
+| Baltica Trade OÜ [Estonia] → Meridian Arms Group [Russia] | 1 | 270.000 € |
+
+**Das Endergebnis:** Neun Lieferkettenpfade werden aufgedeckt. Der gravierendste: `MicroSemi Europe AG [Germany] → Alpha Circuit GmbH [Germany] → Kyra Investments Ltd [Cyprus] → Alexei Petrov [Russia]` mit einem Gesamtvolumen von 2.790.000 €. Genau dieser Pfad wäre in einer normalen Transaktionsdatenbank unsichtbar — drei separate Lieferketten ohne offensichtliche Verbindung auf Tabellenebene.
 
 Das `[:TRANSFERRED_TO*1..4]` in Cypher ist die elegante Syntax für „bis zu vier Hops" — Neo4j's [variable-length path queries](https://neo4j.com/docs/cypher-manual/current/patterns/variable-length-patterns/) traversieren den Graphen intern ohne explizite Rekursion.
 
 ---
 
-### Notebook-Zelle 7 — Visualisierung
+### Notebook-Zelle 7 — Geographische Kartenvisualisierung
+
+Mit `yfiles_jupyter_graphs_for_neo4j` lassen sich die Pfade direkt auf einer interaktiven Weltkarte darstellen. Die `location_x`/`location_y`-Koordinaten aus dem Dataimport werden als geographische Positionen verwendet — Knoten erscheinen an ihrem tatsächlichen Standort.
+
+```python
+# ─── Kartenvisualisierung ────────────────────────────────────────────────────
+QUERY_4_MAP = """
+MATCH p=(supplier:Entity)-[tx:TRANSFERRED_TO*1..4]->(target:Entity {sanctioned: true})
+WHERE NOT supplier.sanctioned
+RETURN p
+"""
+
+# Jede TRANSFERRED_TO-Kante wird markiert, wenn sie eine sanktionierte Entität berührt,
+# da Kanten-Mappings keine Knoteneigenschaften direkt auslesen können.
+with driver.session() as session:
+    session.run("""
+        MATCH (a:Entity)-[r:TRANSFERRED_TO]->(b:Entity)
+        SET r.involves_sanctioned = (a.sanctioned = true OR b.sanctioned = true)
+    """)
+
+# ── Knoten-Mappings ───────────────────────────────────────────────────────────
+def coordinate_mapping(node):
+    props = node["properties"]
+    lat = props.get("location_y")
+    lon = props.get("location_x")
+    if lat is None or lon is None:
+        return None
+    return (lat, lon)
+
+def node_color(node):
+    if node["properties"].get("sanctioned"):
+        return "#e53935"   # rot  — sanktionierte Entität
+    return "#4fc3f7"       # blau — Zwischenstelle / Lieferant
+
+def node_size(node):
+    return 60.0 if node["properties"].get("sanctioned") else 40.0
+
+# ── Kanten-Mappings ───────────────────────────────────────────────────────────
+def rel_color(rel):
+    if rel.get("properties", {}).get("involves_sanctioned"):
+        return "#e53935"   # rot  — führt zu/von sanktioniertem Knoten
+    return "#90caf9"       # blau — unverdächtiger Hop
+
+def rel_thickness(rel):
+    return 4.0 if rel.get("properties", {}).get("involves_sanctioned") else 1.5
+
+# ── Widget konfigurieren ──────────────────────────────────────────────────────
+visualize_cypher.del_node_configuration('*')
+visualize_cypher.del_relationship_configuration('*')
+
+visualize_cypher.node_color_mapping           = node_color
+visualize_cypher.node_size_mapping            = node_size
+visualize_cypher.relationship_color_mapping            = rel_color
+visualize_cypher.relationship_thickness_factor_mapping = rel_thickness
+
+visualize_cypher.add_node_configuration("*", coordinate=coordinate_mapping)
+visualize_cypher.show_cypher(QUERY_4_MAP, layout="map")
+```
+
+Die Karte zeigt sofort, woher die Güter kommen (Westeuropa, blau) und wo sie landen (Russland, rot). Die direkt an sanktionierte Ziele führenden Kanten werden rot hervorgehoben, während neutrale Hops hellblau bleiben. Dieser geographische Blick ist besonders wirkungsvoll für Präsentationen gegenüber Compliance-Teams oder Behörden.
+
+---
+
+### Notebook-Zelle 8 — Netzwerkgraph (NetworkX)
 
 ```python
 # ─── Netzwerk aus Neo4j in networkx laden & visualisieren ─────────────────────
@@ -470,6 +573,8 @@ plt.show()
 
 print("\n✅ Graph-Visualisierung abgeschlossen.")
 ```
+
+![Sanktionsumgehungs-Netzwerk](sanctions_network.png)
 
 Das erzeugte Diagramm macht den Unterschied von Graph-Denken gegenüber Tabellen-Denken auf einen Blick sichtbar: Links die legitimen EU-Lieferanten (blau), in der Mitte das Shell-Netzwerk (orange), rechts die sanktionierten russischen Endempfänger (rot). Die gestrichelten lila Linien zeigen die Eigentümerschaftsketten — die Information, die in einer klassischen Transaktionstabelle vollständig fehlen würde.
 
